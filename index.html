@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Mi Semana</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0F0F11;
+  --surface: #1A1A1F;
+  --surface2: #222228;
+  --surface3: #2A2A32;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.13);
+  --text: #F0F0F5;
+  --text2: #9090A0;
+  --text3: #5A5A6A;
+  --accent: #6C63FF;
+  --accent2: #8B84FF;
+  --accent-bg: rgba(108,99,255,0.12);
+  --green: #22C55E;
+  --green-bg: rgba(34,197,94,0.12);
+  --amber: #F59E0B;
+  --amber-bg: rgba(245,158,11,0.12);
+  --red: #EF4444;
+  --red-bg: rgba(239,68,68,0.12);
+  --blue: #3B82F6;
+  --blue-bg: rgba(59,130,246,0.12);
+  --pink: #EC4899;
+  --pink-bg: rgba(236,72,153,0.12);
+  --teal: #14B8A6;
+  --teal-bg: rgba(20,184,166,0.12);
+  --radius: 10px;
+  --radius-sm: 6px;
+  --radius-lg: 16px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  --slot-h: 36px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html { font-size: 16px; }
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overscroll-behavior: none;
+}
+
+/* ===== TOP BAR ===== */
+.topbar {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(15,15,17,0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 16px;
+  display: flex; align-items: center; gap: 12px;
+  height: 56px;
+}
+.topbar-logo {
+  font-size: 17px; font-weight: 700;
+  background: linear-gradient(135deg, var(--accent2), var(--teal));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.5px;
+  flex: 1;
+}
+.topbar-week {
+  font-size: 12px; color: var(--text2); font-weight: 500;
+  background: var(--surface2);
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+}
+.tab-bar {
+  display: flex;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.tab-bar::-webkit-scrollbar { display: none; }
+.tab {
+  flex: 1; min-width: 80px;
+  padding: 12px 8px;
+  text-align: center;
+  font-size: 12px; font-weight: 500;
+  color: var(--text3);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  white-space: nowrap;
+  user-select: none;
+}
+.tab.active { color: var(--accent2); border-bottom-color: var(--accent); }
+.tab:hover:not(.active) { color: var(--text2); }
+
+/* ===== SCHEDULE VIEW ===== */
+#view-schedule { display: block; }
+#view-stats, #view-cierre { display: none; }
+
+.schedule-wrap {
+  display: flex;
+  height: calc(100vh - 56px - 44px);
+  overflow: hidden;
+}
+
+/* Day selector (mobile) */
+.day-nav {
+  display: flex;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 10px 16px;
+  gap: 8px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.day-nav::-webkit-scrollbar { display: none; }
+.day-btn {
+  flex-shrink: 0;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 2px;
+  padding: 6px 10px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.18s;
+  border: 1px solid transparent;
+  user-select: none;
+}
+.day-btn .day-name { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; }
+.day-btn .day-pct { font-size: 9px; color: var(--text3); margin-top: 2px; }
+.day-btn.active { background: var(--accent-bg); border-color: rgba(108,99,255,0.3); }
+.day-btn.active .day-name { color: var(--accent2); }
+.day-btn.active .day-pct { color: var(--accent); }
+.day-btn:not(.active):hover { background: var(--surface2); }
+
+/* Grid */
+.grid-outer {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+}
+.grid-outer::-webkit-scrollbar { width: 3px; }
+.grid-outer::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 3px; }
+
+.schedule-grid {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+}
+.slot-row {
+  display: contents;
+}
+.slot-time {
+  position: sticky; left: 0;
+  display: flex; align-items: flex-start; justify-content: flex-end;
+  padding: 3px 8px 0 0;
+  font-size: 10px; font-weight: 500;
+  color: var(--text3);
+  height: var(--slot-h);
+  background: var(--bg);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  z-index: 2;
+}
+.slot-time.hour { color: var(--text2); border-bottom-color: var(--border2); }
+.slot-time.half { color: var(--text3); border-bottom-style: dashed; }
+
+.slot-cell {
+  height: var(--slot-h);
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  transition: background 0.15s;
+}
+.slot-cell.hour { border-bottom-color: var(--border2); }
+.slot-cell.half { border-bottom-style: dashed; }
+
+.slot-cell input {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  background: transparent;
+  border: none; outline: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 11px; font-weight: 400;
+  color: var(--text);
+  padding: 0 10px;
+  cursor: pointer;
+}
+.slot-cell input::placeholder { color: var(--text3); font-size: 10px; }
+.slot-cell input:focus { cursor: text; }
+.slot-cell:focus-within {
+  background: rgba(108,99,255,0.08);
+  border-bottom-color: rgba(108,99,255,0.3) !important;
+  z-index: 1;
+}
+.slot-cell.cat-trabajo { background: rgba(59,130,246,0.08); }
+.slot-cell.cat-descanso { background: rgba(108,99,255,0.08); }
+.slot-cell.cat-ocio { background: rgba(34,197,94,0.08); }
+.slot-cell.cat-ejercicio { background: rgba(245,158,11,0.08); }
+.slot-cell.cat-comida { background: rgba(236,72,153,0.08); }
+.slot-cell.cat-otro { background: rgba(20,184,166,0.08); }
+
+/* ===== CATEGORY QUICK BAR ===== */
+.cat-bar {
+  display: flex;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  scrollbar-width: none;
+  align-items: center;
+  flex-shrink: 0;
+}
+.cat-bar::-webkit-scrollbar { display: none; }
+.cat-label { font-size: 10px; color: var(--text3); white-space: nowrap; margin-right: 2px; }
+.cat-chip {
+  flex-shrink: 0;
+  font-size: 10px; font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.18s;
+  user-select: none;
+}
+.cat-chip[data-cat="trabajo"] { color: var(--blue); background: var(--blue-bg); border-color: rgba(59,130,246,0.2); }
+.cat-chip[data-cat="descanso"] { color: var(--accent2); background: var(--accent-bg); border-color: rgba(108,99,255,0.2); }
+.cat-chip[data-cat="ocio"] { color: var(--green); background: var(--green-bg); border-color: rgba(34,197,94,0.2); }
+.cat-chip[data-cat="ejercicio"] { color: var(--amber); background: var(--amber-bg); border-color: rgba(245,158,11,0.2); }
+.cat-chip[data-cat="comida"] { color: var(--pink); background: var(--pink-bg); border-color: rgba(236,72,153,0.2); }
+.cat-chip[data-cat="otro"] { color: var(--teal); background: var(--teal-bg); border-color: rgba(20,184,166,0.2); }
+.cat-chip.selected { transform: scale(1.05); box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+.cat-chip[data-cat="none"] { color: var(--text2); background: var(--surface2); border-color: var(--border2); }
+
+/* ===== STATS VIEW ===== */
+.stats-view { padding: 16px; max-width: 480px; margin: 0 auto; }
+.stats-section-title {
+  font-size: 11px; font-weight: 600; color: var(--text3);
+  text-transform: uppercase; letter-spacing: 1px;
+  margin: 24px 0 12px;
+}
+.stats-section-title:first-child { margin-top: 0; }
+
+.stat-cards {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+}
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+}
+.stat-card .label { font-size: 11px; color: var(--text2); margin-bottom: 6px; }
+.stat-card .value { font-size: 22px; font-weight: 700; letter-spacing: -1px; }
+.stat-card .sub { font-size: 10px; color: var(--text3); margin-top: 3px; }
+.stat-card.accent { border-color: rgba(108,99,255,0.3); background: var(--accent-bg); }
+.stat-card.accent .value { color: var(--accent2); }
+
+.cat-stat-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 8px;
+}
+.cat-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.cat-stat-name { font-size: 13px; font-weight: 500; flex: 1; }
+.cat-stat-hours { font-size: 13px; font-weight: 600; color: var(--text); }
+.cat-stat-pct { font-size: 11px; color: var(--text2); min-width: 34px; text-align: right; }
+.bar-track {
+  height: 4px; background: var(--surface3); border-radius: 4px; flex: 2;
+}
+.bar-fill { height: 100%; border-radius: 4px; transition: width 0.6s cubic-bezier(.4,0,.2,1); }
+
+.day-heat {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;
+  margin-top: 4px;
+}
+.heat-col { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.heat-col .heat-label { font-size: 9px; color: var(--text3); font-weight: 500; }
+.heat-block {
+  width: 100%; aspect-ratio: 1;
+  border-radius: 4px;
+  background: var(--surface2);
+  transition: background 0.3s;
+}
+
+/* ===== CIERRE SEMANAL ===== */
+.cierre-view { padding: 16px; max-width: 480px; margin: 0 auto; }
+.cierre-header {
+  background: linear-gradient(135deg, var(--accent-bg), var(--teal-bg));
+  border: 1px solid rgba(108,99,255,0.25);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+.cierre-header h2 { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
+.cierre-header p { font-size: 12px; color: var(--text2); margin-top: 4px; }
+.cierre-header .week-badge {
+  display: inline-block;
+  font-size: 10px; font-weight: 600;
+  color: var(--accent2);
+  background: var(--accent-bg);
+  border: 1px solid rgba(108,99,255,0.3);
+  padding: 3px 10px; border-radius: 20px;
+  margin-bottom: 10px;
+}
+.insight-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  display: flex; align-items: flex-start; gap: 12px;
+}
+.insight-icon {
+  font-size: 22px; flex-shrink: 0; margin-top: 2px;
+}
+.insight-body .title { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+.insight-body .desc { font-size: 12px; color: var(--text2); line-height: 1.5; }
+
+.export-btn {
+  width: 100%;
+  padding: 14px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  font-family: 'Inter', sans-serif;
+  font-size: 14px; font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 20px;
+  letter-spacing: 0.2px;
+}
+.export-btn:hover { background: var(--accent2); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(108,99,255,0.4); }
+.export-btn:active { transform: translateY(0); }
+
+.reset-btn {
+  width: 100%;
+  padding: 12px;
+  background: transparent;
+  color: var(--red);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-radius: var(--radius);
+  font-family: 'Inter', sans-serif;
+  font-size: 13px; font-weight: 500;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: all 0.2s;
+}
+.reset-btn:hover { background: var(--red-bg); }
+
+/* Day stats row in cierre */
+.day-summary-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 6px;
+}
+.day-summary-name { font-size: 12px; font-weight: 600; width: 36px; color: var(--text2); }
+.day-summary-bar-wrap { flex: 1; height: 6px; background: var(--surface3); border-radius: 6px; overflow: hidden; display: flex; gap: 1px; }
+.day-summary-hours { font-size: 12px; font-weight: 600; color: var(--text); min-width: 38px; text-align: right; }
+
+/* ===== TOAST ===== */
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: var(--surface3);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  font-size: 13px; font-weight: 500;
+  padding: 10px 20px;
+  border-radius: 30px;
+  opacity: 0;
+  transition: all 0.3s;
+  z-index: 999;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: var(--shadow);
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ===== SCROLL TO NOW ===== */
+.now-btn {
+  position: fixed; right: 14px; bottom: 20px;
+  width: 40px; height: 40px;
+  background: var(--accent);
+  border: none; border-radius: 50%;
+  color: white; font-size: 18px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 16px rgba(108,99,255,0.5);
+  z-index: 50;
+  transition: all 0.2s;
+}
+.now-btn:hover { transform: scale(1.08); }
+#view-schedule .now-btn { display: flex; }
+.now-line {
+  position: absolute; left: 0; right: 0;
+  height: 2px;
+  background: var(--red);
+  z-index: 3;
+  pointer-events: none;
+}
+.now-line::before {
+  content: '';
+  position: absolute; left: -1px; top: -4px;
+  width: 10px; height: 10px;
+  background: var(--red);
+  border-radius: 50%;
+}
+
+@media (min-width: 640px) {
+  :root { --slot-h: 32px; }
+  .stats-view, .cierre-view { max-width: 600px; }
+  .stat-cards { grid-template-columns: repeat(4, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-logo">Mi Semana</div>
+  <div class="topbar-week" id="weekLabel">Cargando...</div>
+</div>
+
+<div class="tab-bar">
+  <div class="tab active" data-view="schedule" onclick="switchView('schedule')">📅 Horario</div>
+  <div class="tab" data-view="stats" onclick="switchView('stats')">📊 Estadísticas</div>
+  <div class="tab" data-view="cierre" onclick="switchView('cierre')">✅ Cierre semanal</div>
+</div>
+
+<!-- SCHEDULE VIEW -->
+<div id="view-schedule">
+  <div class="day-nav" id="dayNav"></div>
+  <div class="cat-bar">
+    <span class="cat-label">Categoría:</span>
+    <span class="cat-chip selected" data-cat="none" onclick="selectCat('none')">Sin color</span>
+    <span class="cat-chip" data-cat="trabajo" onclick="selectCat('trabajo')">💼 Trabajo</span>
+    <span class="cat-chip" data-cat="descanso" onclick="selectCat('descanso')">😴 Descanso</span>
+    <span class="cat-chip" data-cat="ocio" onclick="selectCat('ocio')">🎮 Ocio</span>
+    <span class="cat-chip" data-cat="ejercicio" onclick="selectCat('ejercicio')">💪 Ejercicio</span>
+    <span class="cat-chip" data-cat="comida" onclick="selectCat('comida')">🍽 Comida</span>
+    <span class="cat-chip" data-cat="otro" onclick="selectCat('otro')">📌 Otro</span>
+  </div>
+  <div class="grid-outer" id="gridOuter">
+    <div class="schedule-grid" id="scheduleGrid"></div>
+  </div>
+  <button class="now-btn" onclick="scrollToNow()" title="Ir a ahora">◎</button>
+</div>
+
+<!-- STATS VIEW -->
+<div id="view-stats">
+  <div class="stats-view" id="statsContent"></div>
+</div>
+
+<!-- CIERRE VIEW -->
+<div id="view-cierre">
+  <div class="cierre-view" id="cierreContent"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const DAYS = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+const DAYS_FULL = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+const SLOTS = 48;
+const CAT_COLORS = {
+  trabajo: '#3B82F6',
+  descanso: '#8B84FF',
+  ocio: '#22C55E',
+  ejercicio: '#F59E0B',
+  comida: '#EC4899',
+  otro: '#14B8A6',
+  none: null
+};
+
+let currentDay = 0;
+let selectedCat = 'none';
+let scheduleData = {};
+let catData = {};
+
+function storageKey() {
+  return 'misemana_v2';
+}
+
+function load() {
+  try {
+    const raw = localStorage.getItem(storageKey());
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      scheduleData = parsed.schedule || {};
+      catData = parsed.cats || {};
+    }
+  } catch(e) {}
+}
+
+function save() {
+  try {
+    localStorage.setItem(storageKey(), JSON.stringify({ schedule: scheduleData, cats: catData }));
+  } catch(e) {}
+}
+
+function slotKey(day, slot) { return `d${day}s${slot}`; }
+
+function slotLabel(slot) {
+  const h = String(Math.floor(slot / 2)).padStart(2, '0');
+  const m = slot % 2 === 0 ? '00' : '30';
+  return `${h}:${m}`;
+}
+
+function getWeekLabel() {
+  const now = new Date();
+  const day = now.getDay();
+  const mon = new Date(now);
+  mon.setDate(now.getDate() - ((day + 6) % 7));
+  const sun = new Date(mon);
+  sun.setDate(mon.getDate() + 6);
+  const fmt = d => `${d.getDate()}/${d.getMonth()+1}`;
+  return `${fmt(mon)} – ${fmt(sun)}`;
+}
+
+// ===== DAY NAV =====
+function buildDayNav() {
+  const nav = document.getElementById('dayNav');
+  nav.innerHTML = '';
+  DAYS.forEach((d, i) => {
+    const pct = getDayFilledPct(i);
+    const btn = document.createElement('div');
+    btn.className = 'day-btn' + (i === currentDay ? ' active' : '');
+    btn.innerHTML = `<span class="day-name">${d}</span><span class="day-pct">${pct}%</span>`;
+    btn.onclick = () => { currentDay = i; buildDayNav(); buildGrid(); };
+    nav.appendChild(btn);
+  });
+}
+
+function getDayFilledPct(day) {
+  let filled = 0;
+  for (let s = 0; s < SLOTS; s++) {
+    if (scheduleData[slotKey(day, s)]) filled++;
+  }
+  return Math.round((filled / SLOTS) * 100);
+}
+
+// ===== GRID =====
+function buildGrid() {
+  const grid = document.getElementById('scheduleGrid');
+  grid.innerHTML = '';
+
+  for (let s = 0; s < SLOTS; s++) {
+    const isHour = s % 2 === 0;
+    const k = slotKey(currentDay, s);
+    const val = scheduleData[k] || '';
+    const cat = catData[k] || '';
+
+    // Time column
+    const tDiv = document.createElement('div');
+    tDiv.className = 'slot-time ' + (isHour ? 'hour' : 'half');
+    tDiv.textContent = isHour ? slotLabel(s) : '';
+    grid.appendChild(tDiv);
+
+    // Cell
+    const cell = document.createElement('div');
+    cell.className = 'slot-cell ' + (isHour ? 'hour' : 'half') + (cat ? ` cat-${cat}` : '');
+    cell.dataset.slot = s;
+
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.maxLength = 80;
+    inp.value = val;
+    inp.placeholder = isHour ? slotLabel(s) : '';
+    inp.setAttribute('autocomplete', 'off');
+    inp.setAttribute('autocorrect', 'off');
+    inp.setAttribute('spellcheck', 'false');
+
+    inp.addEventListener('focus', () => {
+      if (selectedCat !== 'none') {
+        catData[k] = selectedCat;
+        cell.className = 'slot-cell ' + (isHour ? 'hour' : 'half') + ` cat-${selectedCat}`;
+        save();
+      }
+    });
+
+    inp.addEventListener('input', () => {
+      scheduleData[k] = inp.value;
+      if (!inp.value) delete scheduleData[k];
+      save();
+      updateDayNavPct();
+    });
+
+    cell.appendChild(inp);
+    grid.appendChild(cell);
+  }
+
+  // Now line
+  placeNowLine();
+}
+
+function updateDayNavPct() {
+  const btns = document.querySelectorAll('.day-btn');
+  btns.forEach((btn, i) => {
+    const pct = btn.querySelector('.day-pct');
+    if (pct) pct.textContent = getDayFilledPct(i) + '%';
+  });
+}
+
+function placeNowLine() {
+  const now = new Date();
+  const slot = now.getHours() * 2 + (now.getMinutes() >= 30 ? 1 : 0);
+  const todayIdx = (new Date().getDay() + 6) % 7;
+  if (todayIdx !== currentDay) return;
+
+  const grid = document.getElementById('scheduleGrid');
+  const cells = grid.querySelectorAll('.slot-cell');
+  if (!cells[slot]) return;
+
+  const existing = document.querySelector('.now-line');
+  if (existing) existing.remove();
+
+  const line = document.createElement('div');
+  line.className = 'now-line';
+  cells[slot].style.position = 'relative';
+  cells[slot].appendChild(line);
+}
+
+function scrollToNow() {
+  const todayIdx = (new Date().getDay() + 6) % 7;
+  if (todayIdx !== currentDay) {
+    currentDay = todayIdx;
+    buildDayNav();
+    buildGrid();
+  }
+  const now = new Date();
+  const slot = now.getHours() * 2 + (now.getMinutes() >= 30 ? 1 : 0);
+  const grid = document.getElementById('scheduleGrid');
+  const cells = grid.querySelectorAll('.slot-cell');
+  const target = cells[Math.max(0, slot - 2)];
+  if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ===== CAT SELECTOR =====
+function selectCat(cat) {
+  selectedCat = cat;
+  document.querySelectorAll('.cat-chip').forEach(c => {
+    c.classList.toggle('selected', c.dataset.cat === cat);
+  });
+}
+
+// ===== STATS =====
+function getStats() {
+  const catHours = {};
+  Object.keys(CAT_COLORS).forEach(c => { if (c !== 'none') catHours[c] = 0; });
+  let totalFilled = 0;
+  let longestStreak = 0, currentStreak = 0, streakCat = null;
+  const dayHours = Array(7).fill(0);
+  const dayCatSlots = Array(7).fill(null).map(() => ({}));
+
+  for (let d = 0; d < 7; d++) {
+    for (let s = 0; s < SLOTS; s++) {
+      const k = slotKey(d, s);
+      const val = scheduleData[k];
+      const cat = catData[k];
+      if (val || cat) {
+        totalFilled++;
+        dayHours[d] += 0.5;
+        if (cat && cat !== 'none') {
+          catHours[cat] = (catHours[cat] || 0) + 0.5;
+          dayCatSlots[d][cat] = (dayCatSlots[d][cat] || 0) + 0.5;
+        }
+      }
+    }
+  }
+
+  // Streak (by slot across week)
+  let cs = 0, best = 0;
+  for (let d = 0; d < 7; d++) {
+    for (let s = 0; s < SLOTS; s++) {
+      const k = slotKey(d, s);
+      if (scheduleData[k] || catData[k]) { cs++; best = Math.max(best, cs); }
+      else cs = 0;
+    }
+  }
+  longestStreak = best;
+
+  const totalHours = totalFilled * 0.5;
+  const topCat = Object.entries(catHours).sort((a,b) => b[1]-a[1])[0];
+
+  return { catHours, totalHours, totalFilled, dayHours, dayCatSlots, longestStreak, topCat };
+}
+
+function buildStats() {
+  const stats = getStats();
+  const el = document.getElementById('statsContent');
+  const pct = Math.round((stats.totalFilled / (7*SLOTS)) * 100);
+  const topDay = stats.dayHours.indexOf(Math.max(...stats.dayHours));
+
+  el.innerHTML = `
+    <div class="stats-section-title">Esta semana</div>
+    <div class="stat-cards">
+      <div class="stat-card accent">
+        <div class="label">Horas planificadas</div>
+        <div class="value">${stats.totalHours.toFixed(1)}</div>
+        <div class="sub">de 168 posibles (${pct}%)</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Día más activo</div>
+        <div class="value" style="font-size:16px;margin-top:4px">${DAYS_FULL[topDay] || '—'}</div>
+        <div class="sub">${stats.dayHours[topDay].toFixed(1)} hs planificadas</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Racha más larga</div>
+        <div class="value">${(stats.longestStreak * 0.5).toFixed(1)}<span style="font-size:13px;font-weight:400"> hs</span></div>
+        <div class="sub">seguidas sin pausa</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Actividad principal</div>
+        <div class="value" style="font-size:14px;margin-top:4px">${stats.topCat ? capFirst(stats.topCat[0]) : '—'}</div>
+        <div class="sub">${stats.topCat ? stats.topCat[1].toFixed(1)+' hs' : 'sin datos'}</div>
+      </div>
+    </div>
+
+    <div class="stats-section-title">Por categoría</div>
+    ${Object.entries(stats.catHours).filter(([c,h])=>h>0).sort((a,b)=>b[1]-a[1]).map(([cat, hrs]) => {
+      const pctCat = stats.totalHours > 0 ? Math.round((hrs/stats.totalHours)*100) : 0;
+      return `<div class="cat-stat-row">
+        <div class="cat-dot" style="background:${CAT_COLORS[cat]}"></div>
+        <div class="cat-stat-name">${capFirst(cat)}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${pctCat}%;background:${CAT_COLORS[cat]}"></div></div>
+        <div class="cat-stat-hours">${hrs.toFixed(1)} hs</div>
+        <div class="cat-stat-pct">${pctCat}%</div>
+      </div>`;
+    }).join('') || '<p style="color:var(--text3);font-size:13px;padding:8px 0">Sin categorías asignadas todavía.</p>'}
+
+    <div class="stats-section-title">Actividad por día</div>
+    <div class="day-heat">
+      ${stats.dayHours.map((h, i) => {
+        const intensity = Math.min(h / 12, 1);
+        const bg = intensity > 0
+          ? `rgba(108,99,255,${0.15 + intensity * 0.7})`
+          : 'var(--surface2)';
+        return `<div class="heat-col">
+          <div class="heat-label">${DAYS[i]}</div>
+          <div class="heat-block" style="background:${bg}" title="${h.toFixed(1)} hs"></div>
+          <div style="font-size:9px;color:var(--text3);margin-top:2px">${h.toFixed(1)}</div>
+        </div>`;
+      }).join('')}
+    </div>
+  `;
+}
+
+// ===== CIERRE SEMANAL =====
+function buildCierre() {
+  const stats = getStats();
+  const el = document.getElementById('cierreContent');
+  const pct = Math.round((stats.totalFilled / (7*SLOTS)) * 100);
+  const workHrs = stats.catHours['trabajo'] || 0;
+  const restHrs = stats.catHours['descanso'] || 0;
+  const leisureHrs = stats.catHours['ocio'] || 0;
+  const ejercicioHrs = stats.catHours['ejercicio'] || 0;
+
+  const insights = [];
+  if (workHrs > 50) insights.push({ icon: '⚠️', title: 'Carga laboral alta', desc: `Planificaste ${workHrs.toFixed(1)} hs de trabajo esta semana. Considerá distribuir mejor o agregar más tiempo de descanso.` });
+  else if (workHrs > 0) insights.push({ icon: '💼', title: 'Semana laboral registrada', desc: `${workHrs.toFixed(1)} hs de trabajo planificadas. Un ritmo saludable.` });
+  if (restHrs < 49 && stats.totalHours > 10) insights.push({ icon: '😴', title: 'Poco descanso registrado', desc: `Solo ${restHrs.toFixed(1)} hs de descanso. Recordá que el sueño es parte del rendimiento.` });
+  if (ejercicioHrs > 0) insights.push({ icon: '💪', title: 'Actividad física registrada', desc: `${ejercicioHrs.toFixed(1)} hs de ejercicio esta semana. ¡Excelente hábito!` });
+  if (leisureHrs > 0) insights.push({ icon: '🎮', title: 'Tiempo de ocio', desc: `${leisureHrs.toFixed(1)} hs dedicadas al ocio y descanso activo. Importante para el bienestar.` });
+  if (stats.totalHours === 0) insights.push({ icon: '📝', title: 'Semana en blanco', desc: 'Todavía no hay actividades cargadas. ¡Comenzá a planificar tu semana desde la pestaña de Horario!' });
+
+  el.innerHTML = `
+    <div class="cierre-header">
+      <div class="week-badge">Semana ${getWeekLabel()}</div>
+      <h2>Cierre semanal</h2>
+      <p>${pct}% de la semana planificado · ${stats.totalHours.toFixed(1)} hs en total</p>
+    </div>
+
+    <div class="stats-section-title" style="margin-top:0">Distribución por día</div>
+    ${stats.dayHours.map((h, i) => {
+      const segs = [];
+      const dc = stats.dayCatSlots[i];
+      const total = h > 0 ? h : 1;
+      Object.entries(dc).forEach(([cat, ch]) => {
+        segs.push(`<div style="flex:${ch/total};background:${CAT_COLORS[cat]};opacity:0.8"></div>`);
+      });
+      return `<div class="day-summary-row">
+        <div class="day-summary-name">${DAYS[i]}</div>
+        <div class="day-summary-bar-wrap">${segs.join('') || '<div style="flex:1;background:var(--surface3)"></div>'}</div>
+        <div class="day-summary-hours">${h.toFixed(1)} hs</div>
+      </div>`;
+    }).join('')}
+
+    <div class="stats-section-title">Insights</div>
+    ${insights.map(ins => `
+      <div class="insight-card">
+        <div class="insight-icon">${ins.icon}</div>
+        <div class="insight-body">
+          <div class="title">${ins.title}</div>
+          <div class="desc">${ins.desc}</div>
+        </div>
+      </div>`).join('')}
+
+    <button class="export-btn" onclick="exportCierre()">📤 Exportar resumen semanal</button>
+    <button class="reset-btn" onclick="resetWeek()">🗑 Limpiar semana y empezar de nuevo</button>
+  `;
+}
+
+function exportCierre() {
+  const stats = getStats();
+  const week = getWeekLabel();
+  let txt = `MI SEMANA — CIERRE SEMANAL\nSemana: ${week}\n`;
+  txt += `\n=== RESUMEN ===\n`;
+  txt += `Total planificado: ${stats.totalHours.toFixed(1)} hs\n`;
+  Object.entries(stats.catHours).filter(([c,h])=>h>0).sort((a,b)=>b[1]-a[1]).forEach(([cat,hrs]) => {
+    txt += `  ${capFirst(cat)}: ${hrs.toFixed(1)} hs\n`;
+  });
+  txt += `\n=== POR DÍA ===\n`;
+  stats.dayHours.forEach((h, i) => {
+    txt += `${DAYS_FULL[i]}: ${h.toFixed(1)} hs\n`;
+    for (let s = 0; s < SLOTS; s++) {
+      const k = slotKey(i, s);
+      if (scheduleData[k]) txt += `  ${slotLabel(s)} — ${scheduleData[k]}\n`;
+    }
+  });
+  const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `mi-semana-${week.replace(/[\s\/]/g,'-')}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Resumen exportado ✓');
+}
+
+function resetWeek() {
+  if (!confirm('¿Limpiar toda la semana? Esta acción no se puede deshacer.')) return;
+  scheduleData = {}; catData = {};
+  save();
+  buildDayNav(); buildGrid();
+  switchView('schedule');
+  showToast('Semana reiniciada');
+}
+
+// ===== VIEWS =====
+function switchView(view) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.view === view));
+  document.getElementById('view-schedule').style.display = view === 'schedule' ? 'block' : 'none';
+  document.getElementById('view-stats').style.display = view === 'stats' ? 'block' : 'none';
+  document.getElementById('view-cierre').style.display = view === 'cierre' ? 'block' : 'none';
+  if (view === 'stats') buildStats();
+  if (view === 'cierre') buildCierre();
+}
+
+// ===== TOAST =====
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+function capFirst(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+// ===== WEEK LABEL =====
+function initWeekLabel() {
+  document.getElementById('weekLabel').textContent = getWeekLabel();
+}
+
+// ===== SCHEDULE LAYOUT =====
+function adjustScheduleHeight() {
+  const topbar = 56, tabs = 44;
+  const dayNav = document.querySelector('.day-nav');
+  const catBar = document.querySelector('.cat-bar');
+  const navH = dayNav ? dayNav.offsetHeight : 0;
+  const catH = catBar ? catBar.offsetHeight : 0;
+  const outer = document.getElementById('gridOuter');
+  if (outer) outer.style.height = `calc(100vh - ${topbar+tabs+navH+catH}px)`;
+}
+
+// ===== INIT =====
+load();
+initWeekLabel();
+buildDayNav();
+buildGrid();
+adjustScheduleHeight();
+window.addEventListener('resize', adjustScheduleHeight);
+
+// Update now line every minute
+setInterval(() => {
+  const existing = document.querySelector('.now-line');
+  if (existing) existing.remove();
+  placeNowLine();
+}, 60000);
+</script>
+</body>
+</html>
